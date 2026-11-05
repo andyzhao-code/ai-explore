@@ -1,0 +1,187 @@
+/* 夜色气氛层：灯晕、胶片颗粒、轻微视差。
+   正文对比度仍由 .shade 保证；减少动态时关闭位移与呼吸。 */
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="day"] {
+  color-scheme: light;
+}
+
+/* 固定场景上的暖色灯雾，随章节改变重心 */
+.night-veil {
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 42% 32% at 76% 78%, rgba(255, 148, 58, 0.28), transparent 68%),
+    radial-gradient(ellipse 34% 26% at 16% 36%, rgba(92, 146, 186, 0.18), transparent 70%),
+    radial-gradient(ellipse 70% 28% at 50% 108%, rgba(176, 72, 32, 0.2), transparent 62%);
+  mix-blend-mode: screen;
+  opacity: 0.95;
+}
+
+body[data-chapter="1"] .night-veil {
+  background:
+    radial-gradient(ellipse 36% 30% at 62% 70%, rgba(255, 164, 70, 0.34), transparent 70%),
+    radial-gradient(ellipse 40% 24% at 30% 40%, rgba(70, 120, 160, 0.16), transparent 72%),
+    radial-gradient(ellipse 80% 22% at 50% 100%, rgba(190, 90, 30, 0.22), transparent 64%);
+}
+
+body[data-chapter="2"] .night-veil {
+  background:
+    radial-gradient(ellipse 46% 34% at 70% 64%, rgba(255, 120, 48, 0.32), transparent 68%),
+    radial-gradient(ellipse 28% 22% at 22% 48%, rgba(255, 196, 120, 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(140, 40, 24, 0.24), transparent 60%);
+}
+
+body[data-chapter="3"] .night-veil {
+  background:
+    radial-gradient(ellipse 40% 36% at 72% 58%, rgba(214, 176, 120, 0.16), transparent 70%),
+    radial-gradient(ellipse 36% 28% at 18% 42%, rgba(64, 110, 140, 0.22), transparent 72%),
+    radial-gradient(ellipse 70% 24% at 50% 100%, rgba(40, 70, 90, 0.2), transparent 64%);
+}
+
+body[data-chapter="4"] .night-veil {
+  background:
+    radial-gradient(ellipse 30% 40% at 48% 18%, rgba(255, 186, 96, 0.22), transparent 68%),
+    radial-gradient(ellipse 40% 28% at 70% 72%, rgba(255, 140, 60, 0.26), transparent 70%),
+    radial-gradient(ellipse 80% 26% at 50% 100%, rgba(160, 70, 30, 0.2), transparent 62%);
+}
+
+html[data-theme="day"] .night-veil {
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+}
+
+/* 标题上的灯火呼吸，不改变字号与排版 */
+.js-motion .light-character {
+  text-shadow:
+    0 0 18px rgba(255, 186, 96, 0.28),
+    0 0 42px rgba(214, 120, 48, 0.18);
+  animation: lantern-breathe 5.2s ease-in-out infinite;
+}
+
+.js-motion .status-dot {
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+
+.js-motion .grain {
+  animation: grain-shift 0.9s steps(2) infinite;
+}
+
+.js-motion .release-button:not(.river-button) {
+  box-shadow: 0 0 0 1px rgba(255, 214, 160, 0.25), 0 10px 30px rgba(199, 122, 48, 0.28);
+}
+
+.bottom-progress > span {
+  box-shadow: 0 0 10px rgba(199, 161, 106, 0.85);
+}
+
+/* 视差用独立的 translate，避免盖掉 reveal 的 transform */
+.js-motion .chapter-inner {
+  translate: calc(var(--mx, 0) * -12px) calc((var(--lift, 0.35) - 0.35) * -24px);
+}
+
+.js-motion .vertical-note {
+  translate: calc(var(--mx, 0) * 8px) calc((var(--lift, 0.35) - 0.35) * -16px);
+}
+
+.js-motion .editorial-card,
+.js-motion .poetry-panel {
+  translate: calc(var(--mx, 0) * 14px) calc((var(--lift, 0.35) - 0.35) * 18px);
+}
+
+.js-motion .night-veil {
+  translate: calc(var(--mx, 0) * 28px) calc(var(--my, 0) * 16px);
+}
+
+@keyframes lantern-breathe {
+  50% {
+    text-shadow:
+      0 0 28px rgba(255, 196, 110, 0.55),
+      0 0 64px rgba(214, 110, 40, 0.28);
+  }
+}
+
+@keyframes dot-pulse {
+  50% {
+    box-shadow: 0 0 14px rgba(233, 175, 101, 0.95);
+    transform: scale(1.35);
+  }
+}
+
+@keyframes grain-shift {
+  50% {
+    transform: translate3d(-1.6%, -2.2%, 0);
+  }
+}
+
+@keyframes veil-drift {
+  to {
+    transform: scale(1.05) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+.js-motion .night-veil {
+  animation: veil-drift 18s ease-in-out infinite alternate;
+}
+
+@media (max-width: 700px) {
+  .header {
+    padding-top: max(13px, env(safe-area-inset-top));
+    padding-left: max(17px, env(safe-area-inset-left));
+    padding-right: max(17px, env(safe-area-inset-right));
+  }
+
+  .hero-bottom,
+  footer {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  .festival-buttons button,
+  .release-button {
+    min-height: 44px;
+  }
+
+  /* 窄屏减弱位移，避免标题贴边 */
+  .js-motion .chapter-inner,
+  .js-motion .vertical-note,
+  .js-motion .editorial-card,
+  .js-motion .poetry-panel {
+    translate: 0 calc((var(--lift, 0.35) - 0.35) * -12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .night-veil,
+  .grain,
+  .light-character,
+  .status-dot {
+    animation: none !important;
+  }
+
+  .chapter-inner,
+  .vertical-note,
+  .editorial-card,
+  .poetry-panel,
+  .night-veil {
+    translate: none !important;
+  }
+}
+
+.force-reduced .night-veil,
+.force-reduced .grain,
+.force-reduced .light-character,
+.force-reduced .status-dot {
+  animation: none !important;
+}
+
+.force-reduced .chapter-inner,
+.force-reduced .vertical-note,
+.force-reduced .editorial-card,
+.force-reduced .poetry-panel,
+.force-reduced .night-veil {
+  translate: none !important;
+}
