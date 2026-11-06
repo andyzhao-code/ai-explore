@@ -32,7 +32,7 @@ html[data-theme="day"] {
     radial-gradient(ellipse 34% 26% at 16% 36%, rgba(92, 146, 186, 0.18), transparent 70%),
     radial-gradient(ellipse 70% 28% at 50% 108%, rgba(176, 72, 32, 0.2), transparent 62%);
   mix-blend-mode: screen;
-  opacity: 0.95;
+  opacity: 0.72;
 }
 
 body[data-chapter="1"] .night-veil {

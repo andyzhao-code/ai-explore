@@ -1,26 +1,27 @@
-/* 行人只允许出现在桥面中线、岸墙内侧和砧台顶面。
-   脚点就是世界坐标，不绕身体中心旋转，也不做上下踏步。 */
+/* 行人脚点始终落在桥面、岸墙或木台表面；位移与步态共用同一时间。 */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.SongCitizenPaths = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  // 与场景里虹桥拱线同一公式
   function arch(x) {
     return 2.1 + 4.8 * Math.pow(Math.max(0, 1 - (x / 19) ** 2), 0.9);
   }
 
-  // 桥板中心在 arch(x)，板厚 0.22，再留 2 厘米避免和板面闪烁
-  function deckTop(x) {
+  function slopeAt(x) {
     const dx = 0.4;
-    const slope = (arch(x + dx) - arch(x - dx)) / (2 * dx);
-    const cos = 1 / Math.sqrt(1 + slope * slope);
-    return arch(x) + 0.11 * cos + 0.02;
+    return (arch(x + dx) - arch(x - dx)) / (2 * dx);
+  }
+
+  function deckTop(x) {
+    return arch(x) + 0.11 / Math.sqrt(1 + slopeAt(x) ** 2);
   }
 
   const BRIDGE_Z = -41;
+  const BRIDGE_X0 = -12;
+  const BRIDGE_X1 = 12;
   const BANK_X = 18.9;
-  const BANK_Y = 1.56;
+  const BANK_Y = 1.55;
   const QUAY = [
     { z0: -168, z1: -50, speed: 0.24 },
     { z0: -30, z1: 8, speed: 0.2 }
@@ -35,11 +36,12 @@
       people.push({
         place: 'bridge',
         kind: bridgeKinds[i % bridgeKinds.length],
-        x: -12 + t * 24,
-        z: i % 2 ? BRIDGE_Z + 0.45 : BRIDGE_Z - 0.45,
+        x: 0,
+        z: i % 2 ? BRIDGE_Z + 0.55 : BRIDGE_Z - 0.55,
         side: 0,
-        speed: 0,
-        phase: 0,
+        speed: 0.18 + (i % 3) * 0.025,
+        phase: t * (BRIDGE_X1 - BRIDGE_X0) + (i % 2 ? BRIDGE_X1 - BRIDGE_X0 : 0),
+        gait: i * 1.73,
         z0: 0,
         z1: 0
       });
@@ -58,6 +60,7 @@
             side,
             speed: segment.speed,
             phase: ((i + 0.35) / count) * span,
+            gait: (i + segmentIndex * 2 + (side > 0 ? 1 : 0)) * 1.31,
             z0: segment.z0,
             z1: segment.z1
           });
@@ -68,32 +71,63 @@
       place: 'platform',
       kind: 2,
       x: 12.2,
-      y: 1.26,
+      y: 1.25,
       z: -76,
       side: 1,
       speed: 0,
       phase: 0,
+      gait: 0,
       z0: 0,
       z1: 0
     });
     return people;
   }
 
-  // 返回脚底位置和朝向。桥上的人站定，岸上只沿岸平移。
+  function patrol(start, end, phase, speed, time) {
+    const span = end - start;
+    const travel = ((phase + time * speed) % (span * 2) + span * 2) % (span * 2);
+    const forward = travel <= span;
+    return {
+      position: start + (forward ? travel : span * 2 - travel),
+      direction: forward ? 1 : -1
+    };
+  }
+
   function pose(person, time) {
+    const walkPhase = person.speed ? time * 3.6 + person.gait : 0;
+    const walkStrength = person.speed ? 1 : 0;
     if (person.place === 'bridge') {
-      return { x: person.x, y: deckTop(person.x), z: person.z, yaw: 0 };
+      const route = patrol(BRIDGE_X0, BRIDGE_X1, person.phase, person.speed, time);
+      return {
+        x: route.position,
+        y: deckTop(route.position),
+        z: person.z,
+        yaw: route.direction * 0.14,
+        slope: slopeAt(route.position),
+        walkPhase,
+        walkStrength
+      };
     }
     if (person.place === 'platform') {
-      return { x: person.x, y: person.y, z: person.z, yaw: person.side > 0 ? -Math.PI / 2 : Math.PI / 2 };
+      return {
+        x: person.x,
+        y: person.y,
+        z: person.z,
+        yaw: person.side > 0 ? -Math.PI / 2 : Math.PI / 2,
+        slope: 0,
+        walkPhase: 0,
+        walkStrength: 0
+      };
     }
-    const span = person.z1 - person.z0;
-    const travel = person.speed ? ((person.phase + time * person.speed) % span + span) % span : person.phase;
+    const route = patrol(person.z0, person.z1, person.phase, person.speed, time);
     return {
       x: person.x,
       y: BANK_Y,
-      z: person.z0 + travel,
-      yaw: person.side > 0 ? -Math.PI / 2 : Math.PI / 2
+      z: route.position,
+      yaw: person.side > 0 ? -Math.PI / 2 : Math.PI / 2,
+      slope: 0,
+      walkPhase,
+      walkStrength
     };
   }
 
