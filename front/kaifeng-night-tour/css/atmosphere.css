@@ -1,6 +1,19 @@
 /* 夜色气氛层：灯晕、胶片颗粒、轻微视差。
    正文对比度仍由 .shade 保证；减少动态时关闭位移与呼吸。 */
 
+:root {
+  --serif: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", serif;
+}
+
+.hero-subtitle {
+  font-family: var(--serif);
+  letter-spacing: 0.42em;
+}
+
+.hero-subtitle span {
+  letter-spacing: 0.55em;
+}
+
 html {
   color-scheme: dark;
 }
